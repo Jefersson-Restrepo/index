@@ -1,4 +1,18 @@
-let usuarios = [];
+
+// ================================
+// CARGAR DATOS DE LOCALSTORAGE
+// ================================
+
+// 1. guardar usuaro en local store¡age
+let usuariosGuardados = localStorage.getItem("usuarios");
+
+
+let usuarios = usuariosGuardados ? JSON.parse(usuariosGuardados) : [];
+
+
+function guardarEnLocalStorage() {
+    localStorage.setItem("usuarios", JSON.stringify(usuarios));
+}
 
 // ================================
 // REGISTRAR USUARIO
@@ -8,7 +22,7 @@ function registrarUsuario() {
     alert("===== REGISTRO DE USUARIO =====");
 
     let usuario = prompt("Ingrese su usuario:");
-    if (!usuario) return; // Si cancela
+    if (!usuario) return; // Si cancela o deja vacío
 
     // Verificar si el usuario ya existe
     let usuarioEncontrado = usuarios.find(function (u) {
@@ -35,15 +49,26 @@ function registrarUsuario() {
         return;
     }
 
+    // Estructura del movimiento inicial
+    let movimientoInicial = {
+        tipo: "Apertura de cuenta",
+        monto: saldo,
+        fecha: new Date().toLocaleString()
+    };
+
     let nuevoUsuario = {
         usuario: usuario,
         clave: clave,
         saldo: saldo,
         bloqueado: false,
-        movimientos: []
+        movimientos: [movimientoInicial] // Guardamos el primer movimiento
     };
 
     usuarios.push(nuevoUsuario);
+
+    // Guardamos en el navegador
+    guardarEnLocalStorage();
+
     alert("Usuario registrado correctamente.");
 }
 
@@ -103,6 +128,17 @@ function consignar(usuario) {
     }
 
     usuario.saldo = usuario.saldo + monto;
+
+    // Registrar el movimiento
+    usuario.movimientos.push({
+        tipo: "Consignación",
+        monto: monto,
+        fecha: new Date().toLocaleString()
+    });
+
+    // Guardar los cambios actualizados en el localStorage
+    guardarEnLocalStorage();
+
     alert("Consignación realizada correctamente.\nNuevo saldo: $" + usuario.saldo);
 }
 
@@ -126,7 +162,40 @@ function retirar(usuario) {
     }
 
     usuario.saldo = usuario.saldo - monto;
+
+    // Registrar el movimiento
+    usuario.movimientos.push({
+        tipo: "Retiro",
+        monto: monto,
+        fecha: new Date().toLocaleString()
+    });
+
+    // Guardar los cambios actualizados en el localStorage
+    guardarEnLocalStorage();
+
     alert("Retiro realizado correctamente.\nNuevo saldo: $" + usuario.saldo);
+}
+
+// ================================
+// CONSULTAR MOVIMIENTOS
+// ================================
+
+function verMovimientos(usuario) {
+    alert("===== HISTORIAL DE MOVIMIENTOS =====");
+
+    if (usuario.movimientos.length === 0) {
+        alert("No hay movimientos registrados.");
+        return;
+    }
+
+    let historialTexto = "Movimientos de " + usuario.usuario + ":\n\n";
+
+    // Recorremos el arreglo de movimientos para armar la lista
+    usuario.movimientos.forEach(function (mov, indice) {
+        historialTexto += (indice + 1) + ". " + mov.tipo + ": $" + mov.monto + " (" + mov.fecha + ")\n";
+    });
+
+    alert(historialTexto);
 }
 
 // ================================
@@ -142,7 +211,8 @@ function menuUsuario(usuario) {
             "1. Consultar saldo\n" +
             "2. Consignar dinero\n" +
             "3. Retirar dinero\n" +
-            "4. Cerrar sesión\n\n" +
+            "4. Ver historial de movimientos\n" +
+            "5. Cerrar sesión\n\n" +
             "Seleccione una opción:"
         );
 
@@ -153,12 +223,14 @@ function menuUsuario(usuario) {
         } else if (opcion === "3") {
             retirar(usuario);
         } else if (opcion === "4") {
+            verMovimientos(usuario);
+        } else if (opcion === "5") {
             alert("Sesión cerrada.");
         } else if (opcion !== null) {
             alert("Opción no válida.");
         }
 
-    } while (opcion !== "4" && opcion !== null);
+    } while (opcion !== "5" && opcion !== null);
 }
 
 // ================================
@@ -195,5 +267,5 @@ function menuPrincipal() {
     } while (opcion !== "3" && opcion !== null);
 }
 
-// Iniciar el programa automáticamente al cargar
+// Inicia el programa automáticamente al cargar
 menuPrincipal();
